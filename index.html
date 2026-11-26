@@ -165,48 +165,103 @@ async function compare(){
  }finally{$("compareBtn").disabled=false;$("compareBtn").textContent="실제 날씨 비교하기 ↗"}
 }
 
-async function searchBaseCity(){
- const q=$("baseCitySearch").value.trim(),box=$("baseCitySearchResults");
- if(q.length<2){box.textContent="도시 이름을 두 글자 이상 입력해 주세요.";return}
- box.textContent="전 세계 출발 도시를 검색하고 있습니다…";$("baseCitySearchBtn").disabled=true;
- try{
-  const u=new URL("https://geocoding-api.open-meteo.com/v1/search");u.search=new URLSearchParams({name:q,count:"100",language:"ko",format:"json"}).toString();
-  const r=await fetch(u);if(!r.ok)throw new Error("도시 검색 서버 오류");const j=await r.json();
-  if(!j.results?.length){box.textContent="검색 결과가 없습니다. 도시의 영문 표기나 국가명을 함께 입력해 보세요. 일부 소도시·마을은 검색 데이터에 없을 수 있습니다.";return}
-  box.innerHTML="";
-  j.results.forEach(x=>{const name=[x.name,x.country].filter(Boolean).join(", ");const b=document.createElement("button");b.type="button";b.className="btn secondary";b.style.cssText="display:block;width:100%;text-align:left;margin:6px 0;white-space:normal";b.textContent="출발 도시로 선택 · "+name+(x.admin1?" · "+x.admin1:"");b.addEventListener("click",()=>{selectedBase={id:"base",name,lat:x.latitude,lon:x.longitude,flag:"📍"};$("baseCitySearch").value=name;box.innerHTML=`<strong>출발 도시 · ${safe(name)}</strong>가 기준 도시로 설정되었습니다.`});box.appendChild(b)});
- }catch(e){box.textContent=e.message+" 잠시 후 다시 시도해 주세요."}finally{$("baseCitySearchBtn").disabled=false}
+// 도시 검색: 한글 별칭을 영문 지명으로 보완하고, 결과 언어는 영어로 고정해
+// 국가명이 잘못 번역되거나 국가 자체가 도시처럼 노출되는 문제를 줄입니다.
+const cityAliases = {
+ "서울":"Seoul", "서울시":"Seoul", "서울특별시":"Seoul",
+ "부산":"Busan", "부산시":"Busan", "인천":"Incheon", "대구":"Daegu", "대전":"Daejeon", "광주":"Gwangju", "울산":"Ulsan", "세종":"Sejong",
+ "성남":"Seongnam", "성남시":"Seongnam", "수원":"Suwon", "수원시":"Suwon", "고양":"Goyang", "고양시":"Goyang", "용인":"Yongin", "용인시":"Yongin", "창원":"Changwon", "제주":"Jeju", "제주시":"Jeju", "강릉":"Gangneung", "경주":"Gyeongju", "전주":"Jeonju", "춘천":"Chuncheon", "속초":"Sokcho",
+ "도쿄":"Tokyo", "동경":"Tokyo", "오사카":"Osaka", "교토":"Kyoto", "삿포로":"Sapporo", "하코다테":"Hakodate", "후라노":"Furano", "비에이":"Biei", "아사히카와":"Asahikawa", "후쿠오카":"Fukuoka", "나고야":"Nagoya", "요코하마":"Yokohama", "고베":"Kobe", "나라":"Nara", "오키나와":"Okinawa", "나하":"Naha",
+ "뉴욕":"New York", "로스앤젤레스":"Los Angeles", "엘에이":"Los Angeles", "샌프란시스코":"San Francisco", "시카고":"Chicago", "라스베이거스":"Las Vegas", "하와이":"Honolulu", "호놀룰루":"Honolulu", "밴쿠버":"Vancouver", "토론토":"Toronto",
+ "런던":"London", "파리":"Paris", "로마":"Rome", "밀라노":"Milan", "베네치아":"Venice", "베니스":"Venice", "피렌체":"Florence", "바르셀로나":"Barcelona", "마드리드":"Madrid", "리스본":"Lisbon", "베를린":"Berlin", "뮌헨":"Munich", "프랑크푸르트":"Frankfurt", "프라하":"Prague", "빈":"Vienna", "비엔나":"Vienna", "부다페스트":"Budapest", "암스테르담":"Amsterdam", "브뤼셀":"Brussels", "취리히":"Zurich", "제네바":"Geneva", "인터라켄":"Interlaken", "이스탄불":"Istanbul", "아테네":"Athens",
+ "두바이":"Dubai", "아부다비":"Abu Dhabi", "싱가포르":"Singapore", "방콕":"Bangkok", "치앙마이":"Chiang Mai", "푸켓":"Phuket", "다낭":"Da Nang", "하노이":"Hanoi", "호치민":"Ho Chi Minh City", "호찌민":"Ho Chi Minh City", "타이베이":"Taipei", "대만":"Taipei", "홍콩":"Hong Kong", "마카오":"Macau", "상하이":"Shanghai", "베이징":"Beijing", "광저우":"Guangzhou", "시드니":"Sydney", "멜버른":"Melbourne", "오클랜드":"Auckland"
+};
+function cityQueryVariants(q){
+ const key=q.replace(/\s+/g,'').replace(/시$/,'시');
+ const alias=cityAliases[key] || cityAliases[q];
+ const variants=[q];
+ if(alias && alias.toLowerCase()!==q.toLowerCase()) variants.push(alias);
+ // 한글 지명은 별칭 검색이 실패해도 원문을 영어 응답 언어로 한 번 조회합니다.
+ return [...new Set(variants)].filter(v=>v.length>=2);
 }
-$("baseCitySearchBtn").addEventListener("click",searchBaseCity);
-$("baseCitySearch").addEventListener("keydown",e=>{if(e.key==="Enter")searchBaseCity()});
+async function searchWorldCities(rawQuery){
+ const queries=cityQueryVariants(rawQuery);
+ // 한글 원문·영문 별칭을 병렬 조회하되, 한쪽 요청 실패가 다른 쪽의 정상 결과까지
+ // 모두 실패 처리하지 않도록 요청별 성공 결과를 따로 수집합니다.
+ const settled=await Promise.allSettled(queries.map(async name=>{
+  const u=new URL('https://geocoding-api.open-meteo.com/v1/search');
+  u.search=new URLSearchParams({name,count:'100',language:'en',format:'json'}).toString();
+  const r=await fetch(u);
+  if(!r.ok) throw new Error('도시 검색 서버 오류 ('+r.status+')');
+  const j=await r.json();
+  return Array.isArray(j.results)?j.results:[];
+ }));
+ const responses=settled.filter(x=>x.status==='fulfilled').map(x=>x.value);
+ if(!responses.length){throw new Error('도시 검색 서버에 연결하지 못했습니다. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.')}
+ const seen=new Set(), results=[];
+ for(const list of responses){
+  for(const x of list){
+   // 도시·마을 등 사람이 거주하는 지명만 노출. 국가/행정구역이 도시처럼 나오는 결과 제외.
+   if(!x || !Number.isFinite(x.latitude) || !Number.isFinite(x.longitude)) continue;
+   if(!x.feature_code || !String(x.feature_code).startsWith('PPL')) continue;
+   const key=String(x.id ?? `${x.name}|${x.country_code}|${x.latitude}|${x.longitude}`);
+   if(seen.has(key)) continue;
+   seen.add(key); results.push(x);
+  }
+ }
+ return results.slice(0,100);
+}
+function cityLabel(x){
+ return [x.name,x.admin1 && x.admin1!==x.name ? x.admin1 : '',x.country].filter(Boolean).join(', ');
+}
+function appendCityResult(box,x,buttonText,onChoose){
+ const name=cityLabel(x),b=document.createElement('button');
+ b.type='button';b.className='btn secondary';
+ b.style.cssText='display:block;width:100%;text-align:left;margin:6px 0;white-space:normal';
+ const pop=x.population?` · 인구 ${Number(x.population).toLocaleString('en-US')}`:'';
+ b.textContent=buttonText+name+pop;
+ b.addEventListener('click',()=>onChoose(x,name));box.appendChild(b);
+}
+async function searchBaseCity(){
+ const q=$('baseCitySearch').value.trim(),box=$('baseCitySearchResults');
+ if(q.length<2){box.textContent='도시 이름을 두 글자 이상 입력해 주세요.';return}
+ box.textContent='전 세계 도시 데이터에서 검색하고 있습니다…';$('baseCitySearchBtn').disabled=true;
+ try{
+  const results=await searchWorldCities(q);
+  if(!results.length){box.textContent='일치하는 도시·마을을 찾지 못했습니다. 예: 성남 또는 Seongnam, Tokyo 또는 Tokyo, Japan처럼 입력해 주세요.';return}
+  box.innerHTML=`<strong>${results.length}개 도시·정착지 검색 결과</strong>`;
+  results.forEach(x=>appendCityResult(box,x,'출발 도시로 선택 · ',(place,name)=>{
+   selectedBase={id:'base',name,lat:place.latitude,lon:place.longitude,flag:'📍'};
+   $('baseCitySearch').value=name;
+   box.innerHTML=`<strong>출발 도시 · ${safe(name)}</strong>가 기준 도시로 설정되었습니다.`;
+  }));
+ }catch(e){box.textContent=e.message+' 잠시 후 다시 시도해 주세요.'}finally{$('baseCitySearchBtn').disabled=false}
+}
+$('baseCitySearchBtn').addEventListener('click',searchBaseCity);
+$('baseCitySearch').addEventListener('keydown',e=>{if(e.key==='Enter')searchBaseCity()});
 
-$("compareBtn").addEventListener("click",compare);
+$('compareBtn').addEventListener('click',compare);
 function setupDestinationSearch(slot){
- const input=$("citySearch"+slot),button=$("searchBtn"+slot),box=$("searchResults"+slot),select=$("city"+slot);
- button.addEventListener("click",async()=>{
+ const input=$('citySearch'+slot),button=$('searchBtn'+slot),box=$('searchResults'+slot),select=$('city'+slot);
+ button.addEventListener('click',async()=>{
   const q=input.value.trim();
-  if(q.length<2){box.textContent="도시 이름을 두 글자 이상 입력해 주세요.";return}
-  box.textContent="전 세계 도시를 검색하고 있습니다…";button.disabled=true;
+  if(q.length<2){box.textContent='도시 이름을 두 글자 이상 입력해 주세요.';return}
+  box.textContent='전 세계 도시 데이터에서 검색하고 있습니다…';button.disabled=true;
   try{
-   const u=new URL("https://geocoding-api.open-meteo.com/v1/search");u.search=new URLSearchParams({name:q,count:"100",language:"ko",format:"json"}).toString();
-   const r=await fetch(u);if(!r.ok)throw new Error("도시 검색 서버 오류");const j=await r.json();
-   if(!j.results?.length){box.textContent="검색 결과가 없습니다. 도시의 영문 표기나 국가명을 함께 입력해 보세요. 일부 소도시·마을은 검색 데이터에 없을 수 있습니다.";return}
-   box.innerHTML="";
-   j.results.forEach((x,i)=>{
-    const name=[x.name,x.country].filter(Boolean).join(", ");
-    const item={id:"search"+Date.now()+slot+i,name,lat:x.latitude,lon:x.longitude,flag:"📍"};
-    const b=document.createElement("button");b.type="button";b.className="btn secondary";b.style.cssText="display:block;width:100%;text-align:left;margin:5px 0;white-space:normal";b.textContent="＋ 이 칸에 선택 · "+name+(x.admin1?" · "+x.admin1:"");
-    b.addEventListener("click",()=>{
-     const chosen=[$("city1").value,$("city2").value,$("city3").value].filter((id,index)=>Boolean(id)&&index!==slot-1);
-     if(chosen.includes(item.id)||chosen.some(id=>destinations.find(d=>d.id===id)?.name===item.name)){box.textContent="이미 다른 비교 여행지에 선택한 도시입니다.";return}
-     destinations=destinations.filter(d=>d.id!==item.id);destinations.push(item);refreshDestinations();select.value=item.id;input.value=name;box.textContent="";
-     const chosenBox=$("selectedCity"+slot);chosenBox.hidden=false;chosenBox.innerHTML="<span>선택됨 · "+safe(name)+(x.admin1?" · "+safe(x.admin1):"")+"</span>";
-     const clear=document.createElement("button");clear.type="button";clear.textContent="변경";clear.addEventListener("click",()=>{select.value="";chosenBox.hidden=true;chosenBox.textContent="";input.value="";input.focus()});chosenBox.appendChild(clear);
-    });box.appendChild(b);
-   });
-  }catch(e){box.textContent=e.message+" 잠시 후 다시 시도해 주세요."}finally{button.disabled=false}
+   const results=await searchWorldCities(q);
+   if(!results.length){box.textContent='일치하는 도시·마을을 찾지 못했습니다. 도시명 또는 도시명 + 국가명으로 입력해 주세요.';return}
+   box.innerHTML=`<strong>${results.length}개 도시·정착지 검색 결과</strong>`;
+   results.forEach((x,i)=>appendCityResult(box,x,'＋ 이 칸에 선택 · ',(place,name)=>{
+    const item={id:'search'+Date.now()+slot+i,name,lat:place.latitude,lon:place.longitude,flag:'📍'};
+    const chosen=[$('city1').value,$('city2').value,$('city3').value].filter((id,index)=>Boolean(id)&&index!==slot-1);
+    if(chosen.includes(item.id)||chosen.some(id=>destinations.find(d=>d.id===id)?.name===item.name)){box.textContent='이미 다른 비교 여행지에 선택한 도시입니다.';return}
+    destinations=destinations.filter(d=>d.id!==item.id);destinations.push(item);refreshDestinations();select.value=item.id;input.value=name;box.textContent='';
+    const chosenBox=$('selectedCity'+slot);chosenBox.hidden=false;chosenBox.innerHTML='<span>선택됨 · '+safe(name)+'</span>';
+    const clear=document.createElement('button');clear.type='button';clear.textContent='변경';clear.addEventListener('click',()=>{select.value='';chosenBox.hidden=true;chosenBox.textContent='';input.value='';input.focus()});chosenBox.appendChild(clear);
+   }));
+  }catch(e){box.textContent=e.message+' 잠시 후 다시 시도해 주세요.'}finally{button.disabled=false}
  });
- input.addEventListener("keydown",e=>{if(e.key==="Enter")button.click()});
+ input.addEventListener('keydown',e=>{if(e.key==='Enter')button.click()});
 }
 [1,2,3].forEach(setupDestinationSearch);
 
