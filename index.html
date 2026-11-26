@@ -4,19 +4,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#eaf5fc">
-<title>내 도시 기준 세계 여행지 날씨 비교기</title>
-<meta name="description" content="내 도시와 전 세계 여행지의 실제 예보를 비교하고 여행하기 좋은 도시를 찾아보세요.">
+<title>언제 어디로 떠날까? | 여행 날씨 비교와 옷차림 팁</title>
+<meta name="description" content="여행지 날씨를 비교하고, 짐 싸기 전 날씨와 옷차림 팁을 확인하세요.">
 <style>
 :root{--bg:#edf7fc;--ink:#172b45;--muted:#62758b;--green:#2878b9;--green2:#e3f2fb;--line:#d8e8f3;--white:#fff;--red:#e16b61;--blue:#3974bd}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;padding:28px 16px 48px}
 .wrap{max-width:1040px;margin:auto}.hero{margin:0 0 22px}.eyebrow{font-size:12px;color:var(--green);font-weight:800;letter-spacing:.08em}.hero h1{font-size:clamp(25px,4vw,36px);line-height:1.2;letter-spacing:-.04em;margin:9px 0}.hero p{color:var(--muted);font-size:14px;line-height:1.65;margin:0}
 .layout{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(320px,.95fr);gap:20px;align-items:start}.left{display:grid;gap:16px}.card,.result{background:var(--white);border:1px solid var(--line);border-radius:22px;padding:24px;box-shadow:0 5px 24px #17210e08}.step{display:flex;align-items:center;gap:10px;margin-bottom:20px}.num{background:var(--green2);color:var(--green);font-weight:850;font-size:11px;padding:5px 9px;border-radius:7px}.step h2{font-size:18px;margin:0;letter-spacing:-.03em}
-.field{margin:0 0 16px}.field:last-child{margin-bottom:0}label{display:block;font-size:13px;font-weight:750;color:#4d5948;margin-bottom:8px}
-select,input{width:100%;padding:12px 13px;border:1px solid #d8dfd2;border-radius:11px;background:#f8fcff;color:var(--ink);font-size:14px;min-height:46px}select:focus,input:focus{outline:2px solid #9ac9e8;border-color:var(--green)}
+.field{margin:0 0 16px}.field:last-child{margin-bottom:0}label{display:block;font-size:13px;font-weight:750;color:#36536f;margin-bottom:8px}
+select,input{width:100%;padding:12px 13px;border:1px solid #d4e5f1;border-radius:11px;background:#f8fcff;color:var(--ink);font-size:14px;min-height:46px}select:focus,input:focus{outline:2px solid #9ac9e8;border-color:var(--green)}
 .hint{font-size:11px;line-height:1.55;color:#71869b;margin:7px 0 0}.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}.three{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.searchline{display:flex;gap:8px}.searchline input{flex:1;min-width:0}.btn{border:0;border-radius:11px;background:var(--green);color:white;font-weight:800;padding:12px 17px;font-size:13px;cursor:pointer}.btn:disabled{opacity:.55;cursor:wait}.btn.secondary{background:#e7f3fb;color:#1e5e91}.btn.full{width:100%;margin-top:8px;min-height:48px}
 .result{background:#edf7fc;border-color:#d8e8f3;position:sticky;top:18px;padding:26px}.result .arrow{width:42px;height:42px;border:1px solid #cfe3f1;border-radius:50%;display:grid;place-items:center;background:#ffffff;color:var(--green);font-size:19px;margin-bottom:16px}.sub{font-size:12px;color:#3978a8;font-weight:800}.headline{font-size:25px;line-height:1.32;letter-spacing:-.045em;margin:7px 0 9px}.desc{font-size:12px;color:#687462;line-height:1.6;margin:0 0 18px}.rows{border-top:1px solid #d3e5f1}.weather-row{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:15px 0;border-bottom:1px solid #d3e5f1}.city{font-weight:800;font-size:14px}.meta{font-size:11px;color:#74806d;margin-top:5px}.right{text-align:right;white-space:nowrap}.temp{font-size:16px;font-weight:850}.diff{font-size:11px;margin-top:5px;font-weight:750}.hot{color:var(--red)}.cold{color:var(--blue)}.basepill{font-size:10px;background:var(--green);color:white;padding:3px 6px;border-radius:5px;margin-left:5px}
 .rec{background:white;border:1px solid #d9eaf5;border-radius:14px;padding:15px;margin-top:17px}.rec h3{font-size:12px;color:var(--green);margin:0 0 7px}.rec p{font-size:12px;line-height:1.65;color:#314a64;margin:0}.rec small{display:block;font-size:10px;color:#7a8da0;margin-top:8px;line-height:1.5}
-.status{font-size:12px;color:var(--muted);min-height:18px;margin:9px 0 0}.status.error{color:#b64b40}.status.ok{color:var(--green)}.badge{display:inline-block;background:#e7ede0;color:#536746;padding:3px 7px;border-radius:6px;font-size:10px;font-weight:800}
+.clothing{background:#f5fbff;border:1px solid #cfe3f1;border-radius:14px;padding:15px;margin-top:12px}.clothing h3{font-size:12px;color:var(--green);margin:0 0 7px}.clothing p{font-size:12px;line-height:1.7;color:#314a64;margin:0}.status{font-size:12px;color:var(--muted);min-height:18px;margin:9px 0 0}.status.error{color:#b64b40}.status.ok{color:var(--green)}.badge{display:inline-block;background:#e7ede0;color:#536746;padding:3px 7px;border-radius:6px;font-size:10px;font-weight:800}
 .footer{font-size:10px;color:#71869b;line-height:1.7;margin:18px 2px}.footer a{color:#286eaa}.loading{opacity:.6;pointer-events:none}
 @media(max-width:800px){body{padding:22px 13px 36px}.layout{grid-template-columns:1fr}.result{position:static}.card,.result{padding:19px}.headline{font-size:23px}}
 @media(max-width:430px){.three{grid-template-columns:1fr}.two{grid-template-columns:1fr}.searchline{flex-direction:column}.searchline .btn{width:100%}}
@@ -26,14 +26,14 @@ select,input{width:100%;padding:12px 13px;border:1px solid #d8dfd2;border-radius
 <div class="wrap">
 <header class="hero">
  <div class="eyebrow">TRAVEL WEATHER COMPARE</div>
- <h1>내 도시 기준<br>세계 여행지 날씨 비교기</h1>
- <p>여행 날짜를 고르고 도시를 비교해 보세요.<br>실제 예보를 바탕으로 조금 더 쾌적한 여행지를 찾아드립니다.</p>
+ <h1>언제 어디로 떠날까?</h1>
+ <p><strong>스마트한 여행 준비, 짐 싸기 전 날씨 체크부터 옷차림까지</strong><br>여행지 날씨를 비교하고, 떠나기 전 필요한 옷차림을 미리 확인하세요.</p>
 </header>
 <main class="layout">
 <section class="left">
  <div class="card">
   <div class="step"><span class="num">01</span><h2>어디서, 언제 떠나시나요?</h2></div>
-  <div class="field"><label for="baseCity">기준 도시 · 내가 사는 곳</label>
+  <div class="field"><label for="baseCity">출발 도시 · 기준 도시</label>
    <select id="baseCity">
     <option value="37.4449,127.1389|성남, 대한민국">🇰🇷 성남, 대한민국</option>
     <option value="37.5665,126.9780|서울, 대한민국">🇰🇷 서울, 대한민국</option>
@@ -41,8 +41,15 @@ select,input{width:100%;padding:12px 13px;border:1px solid #d8dfd2;border-radius
     <option value="33.4996,126.5312|제주, 대한민국">🇰🇷 제주, 대한민국</option>
     <option value="35.6895,139.6917|도쿄, 일본">🇯🇵 도쿄, 일본</option>
    </select>
+   <div class="searchline" style="margin-top:8px"><input id="baseSearch" type="search" placeholder="출발 도시 검색 · 예: 런던, 뉴욕, 삿포로"><button class="btn secondary" id="baseSearchBtn" type="button">출발 도시 찾기</button></div>
+   <div id="baseSearchResults" class="status" aria-live="polite"></div>
+   <p class="hint">기본 도시를 선택하거나 전 세계 도시를 검색해 출발 도시로 설정할 수 있습니다.</p>
   </div>
-  <div class="field"><label for="travelDate">여행 날짜</label><input id="travelDate" type="date"><p class="hint" id="dateHint">실제 예보가 제공되는 날짜만 선택할 수 있습니다. 최대 16일 예보 기준입니다.</p></div>
+  <div class="two">
+   <div class="field"><label for="travelDate">여행 시작일</label><input id="travelDate" type="date"></div>
+   <div class="field"><label for="returnDate">귀국일</label><input id="returnDate" type="date"></div>
+  </div>
+  <p class="hint" id="dateHint">여행 일정은 최대 30일까지 설정할 수 있습니다. 실제 날씨 비교는 Open-Meteo에서 제공하는 최대 16일 예보 범위에서 출발일 기준으로 조회합니다.</p>
  </div>
  <div class="card">
   <div class="step"><span class="num">02</span><h2>비교할 여행 도시 선택</h2></div>
@@ -68,6 +75,7 @@ select,input{width:100%;padding:12px 13px;border:1px solid #d8dfd2;border-radius
  <p class="desc" id="summaryDesc">기준 도시와 여행지의 낮 최고·밤 최저기온, 강수확률을 비교합니다.</p>
  <div class="rows" id="compareList"><div class="weather-row"><span class="meta">도시를 선택하고 비교하기를 눌러주세요.</span></div></div>
  <div class="rec"><h3>✦ 여행하기 좋은 도시 추천</h3><p id="recommendation">실제 예보를 불러오면 기온과 강수확률을 함께 고려해 추천 도시를 보여드립니다.</p><small>추천은 기온 18~27℃, 낮은 강수확률, 극단적인 추위·더위 여부를 기준으로 한 참고용 점수입니다. 개인 취향과 여행 목적에 따라 달라질 수 있습니다.</small></div>
+ <div class="clothing"><h3>✦ 옷차림 팁</h3><p id="clothingTip">날씨를 비교하면 기온·체감온도·바람·비와 눈을 고려한 옷차림 팁을 안내합니다.</p></div>
 </aside>
 </main>
 <footer class="footer">
@@ -106,20 +114,24 @@ function refreshDestinations(){
 }
 refreshDestinations();
 const now=new Date();const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
-const max=new Date(today);max.setDate(max.getDate()+15);
+const forecastMax=new Date(today);forecastMax.setDate(forecastMax.getDate()+15);
 const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-$("travelDate").min=iso(today);$("travelDate").max=iso(max);$("travelDate").value=iso(today);
-$("dateHint").textContent=`선택 가능 기간: ${iso(today)} ~ ${iso(max)} · 예보 제공 범위는 최대 16일이며 지역·모델에 따라 달라질 수 있습니다.`;
+const startInput=$("travelDate"),endInput=$("returnDate");
+startInput.min=iso(today);startInput.max=iso(forecastMax);startInput.value=iso(today);
+function syncReturnDate(){const start=new Date(startInput.value+"T12:00:00");const maxEnd=new Date(start);maxEnd.setDate(maxEnd.getDate()+29);endInput.min=startInput.value;endInput.max=iso(maxEnd);if(!endInput.value||endInput.value<startInput.value)endInput.value=startInput.value;if(endInput.value>endInput.max)endInput.value=endInput.max;}
+syncReturnDate();
+$("dateHint").textContent=`여행 기간 최대 30일 · 출발일 예보 선택 범위 ${iso(today)} ~ ${iso(forecastMax)}. 실제 비교는 최대 16일 예보로 출발일 기준 조회합니다.`;
+startInput.addEventListener("change",syncReturnDate);
 function getBase(){let [latlon,name]= $("baseCity").value.split("|");let [lat,lon]=latlon.split(",").map(Number);return {id:"base",name,lat,lon,flag:"📍"}}
 async function forecast(place,date){
  const u=new URL("https://api.open-meteo.com/v1/forecast");
- u.search=new URLSearchParams({latitude:place.lat,longitude:place.lon,daily:"weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max",forecast_days:"16",timezone:"auto"}).toString();
+ u.search=new URLSearchParams({latitude:place.lat,longitude:place.lon,daily:"weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_probability_max,precipitation_sum,snowfall_sum,wind_speed_10m_max,wind_gusts_10m_max",forecast_days:"16",timezone:"auto"}).toString();
  const r=await fetch(u);if(!r.ok)throw new Error("날씨 서버 응답 오류 ("+r.status+")");
  const j=await r.json();const i=j.daily.time.indexOf(date);
  if(i<0)throw new Error(place.name+"의 해당 날짜 예보를 아직 제공하지 않습니다.");
  const d=j.daily, vals=[d.temperature_2m_max[i],d.temperature_2m_min[i],d.precipitation_probability_max?.[i],d.weather_code[i]];
  if(vals.some(v=>v===null||v===undefined))throw new Error(place.name+"의 일부 예보 데이터가 없습니다.");
- return {place,date,max:vals[0],min:vals[1],rain:vals[2],code:vals[3],timezone:j.timezone};
+ return {place,date,max:vals[0],min:vals[1],rain:vals[2],code:vals[3],feelMax:d.apparent_temperature_max?.[i]??vals[0],feelMin:d.apparent_temperature_min?.[i]??vals[1],precip:d.precipitation_sum?.[i]??0,snow:d.snowfall_sum?.[i]??0,wind:d.wind_speed_10m_max?.[i]??0,gust:d.wind_gusts_10m_max?.[i]??0,timezone:j.timezone};
 }
 function score(w){
  let t=(w.max+w.min)/2;
@@ -134,14 +146,14 @@ async function compare(){
  const date=$("travelDate").value,base=getBase();
  const ids=[$("city1").value,$("city2").value,$("city3").value];
  if(new Set(ids).size!==3){$("mainStatus").textContent="서로 다른 여행 도시 3곳을 선택해 주세요.";$("mainStatus").className="status error";return}
- if(!date||date<$("travelDate").min||date>$("travelDate").max){$("mainStatus").textContent="선택 가능한 예보 날짜를 확인해 주세요.";$("mainStatus").className="status error";return}
+ if(!date||date<startInput.min||date>startInput.max||!endInput.value||endInput.value<date||endInput.value>endInput.max){$("mainStatus").textContent="여행 시작일과 귀국일을 확인해 주세요. 출발일은 최대 16일 예보 범위에서 선택할 수 있습니다.";$("mainStatus").className="status error";return}
  const places=[base,...ids.map(id=>destinations.find(d=>d.id===id)).filter(Boolean)];
  $("compareBtn").disabled=true;$("compareBtn").textContent="실제 예보 불러오는 중…";$("mainStatus").textContent="선택한 4개 도시의 예보를 조회하고 있습니다.";$("mainStatus").className="status";
  $("compareList").innerHTML="";$("recommendation").textContent="예보를 불러오는 중입니다.";
  try{
   const results=await Promise.all(places.map(p=>forecast(p,date)));
   const b=results[0],trips=results.slice(1);
-  $("summarySub").textContent=date+" · "+base.name+" 기준 실제 예보";
+  $("summarySub").textContent=date+" ~ "+endInput.value+" · "+base.name+" 출발 기준 실제 예보";
   let first=trips[0],diff=Math.round(first.max-b.max);
   $("headline").textContent=diff>0?first.place.name+"가 "+diff+"℃ 더 따뜻합니다.":diff<0?first.place.name+"가 "+Math.abs(diff)+"℃ 더 쌀쌀합니다.":first.place.name+"와 낮 최고기온이 같습니다.";
   $("summaryDesc").textContent="각 도시 현지 날짜 기준 최고·최저기온과 강수확률입니다. 기온 차이는 기준 도시의 낮 최고기온과 비교했습니다.";
@@ -150,6 +162,13 @@ async function compare(){
   const ranked=trips.map(w=>({...w,score:score(w)})).sort((a,b)=>b.score-a.score);
   const best=ranked[0], [bi,bt]=wmo(best.code);
   $("recommendation").innerHTML=`<strong>${safe(best.place.flag||"📍")} ${safe(best.place.name)}</strong>이(가) 선택한 세 도시 중 가장 높은 날씨 점수(${best.score}/100)를 받았습니다. ${Math.round(best.max)}℃ / ${Math.round(best.min)}℃, 강수확률 ${best.rain}%로 ${rankText(best.score)}입니다. ${ranked.length>1?"다음은 "+ranked.slice(1).map(x=>safe(x.place.name)).join(", ")+" 순입니다.":""}`;
+  const feels=[best.feelMax,best.feelMin],low=Math.min(...feels),high=Math.max(...feels);
+  let outfit=high<5?"두꺼운 패딩과 보온 내의, 목도리·장갑·모자가 필요합니다.":high<12?"코트나 경량 패딩에 따뜻한 이너를 겹쳐 입는 편이 좋습니다.":high<18?"재킷이나 트렌치코트처럼 겹쳐 입고 벗기 쉬운 겉옷을 추천합니다.":high<25?"긴팔 상의에 가벼운 겉옷을 준비하면 좋습니다.":"통기성 좋은 얇은 옷을 중심으로 준비하고 강한 햇볕에 대비하세요.";
+  if(best.rain>=50||best.precip>=3)outfit+=" 강수 가능성이 있어 접이식 우산이나 방수 겉옷을 챙기세요.";
+  if(best.snow>=1)outfit+=" 눈 예보가 있으니 미끄럼 방지 신발을 권합니다.";
+  if(best.wind>=25||best.gust>=40)outfit+=" 바람이 강할 수 있어 바람막이와 체온을 지킬 수 있는 겉옷이 유용합니다.";
+  outfit+=` 체감온도는 약 ${Math.round(best.feelMin)}~${Math.round(best.feelMax)}℃, 최대 풍속은 ${Math.round(best.wind)}km/h입니다.`;
+  $("clothingTip").textContent=`${best.place.name} 기준 · ${outfit}`;
   $("mainStatus").textContent="실제 예보를 불러왔습니다. 마지막 조회: "+new Date().toLocaleTimeString("ko-KR");
   $("mainStatus").className="status ok";
  }catch(e){
@@ -159,6 +178,22 @@ async function compare(){
   $("mainStatus").textContent=e.message;$("mainStatus").className="status error";
  }finally{$("compareBtn").disabled=false;$("compareBtn").textContent="실제 날씨 비교하기 ↗"}
 }
+
+async function searchBaseCity(){
+ const q=$("baseSearch").value.trim(),box=$("baseSearchResults");
+ if(q.length<2){box.textContent="도시 이름을 두 글자 이상 입력해 주세요.";return}
+ box.textContent="출발 도시를 검색하고 있습니다…";$("baseSearchBtn").disabled=true;
+ try{
+  const u=new URL("https://geocoding-api.open-meteo.com/v1/search");u.search=new URLSearchParams({name:q,count:"8",language:"ko",format:"json"}).toString();
+  const r=await fetch(u);if(!r.ok)throw new Error("도시 검색 서버 오류");const j=await r.json();
+  if(!j.results?.length){box.textContent="검색 결과가 없습니다. 영문 도시명으로도 검색해 보세요.";return}
+  box.innerHTML="";
+  j.results.forEach((x,i)=>{const name=[x.name,x.country].filter(Boolean).join(", ");const b=document.createElement("button");b.type="button";b.className="btn secondary";b.style.cssText="display:block;width:100%;text-align:left;margin:6px 0;white-space:normal";b.textContent="출발 도시로 설정 · "+name+(x.admin1?" · "+x.admin1:"");b.addEventListener("click",()=>{const value=`${x.latitude},${x.longitude}|${name}`;let opt=Array.from($("baseCity").options).find(o=>o.value===value);if(!opt){opt=document.createElement("option");opt.value=value;opt.textContent="📍 "+name;$("baseCity").appendChild(opt)}$("baseCity").value=value;b.textContent="출발 도시 설정 완료 · "+name;b.disabled=true});box.appendChild(b)});
+ }catch(e){box.textContent=e.message+" 잠시 후 다시 시도해 주세요."}finally{$("baseSearchBtn").disabled=false}
+}
+$("baseSearchBtn").addEventListener("click",searchBaseCity);
+$("baseSearch").addEventListener("keydown",e=>{if(e.key==="Enter")searchBaseCity()});
+
 $("compareBtn").addEventListener("click",compare);
 $("searchBtn").addEventListener("click",async()=>{
  const q=$("citySearch").value.trim(),box=$("searchResults");
