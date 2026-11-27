@@ -171,7 +171,7 @@ const cityAliases = {
  "서울":"Seoul", "서울시":"Seoul", "서울특별시":"Seoul",
  "부산":"Busan", "부산시":"Busan", "인천":"Incheon", "대구":"Daegu", "대전":"Daejeon", "광주":"Gwangju", "울산":"Ulsan", "세종":"Sejong",
  "성남":"Seongnam", "성남시":"Seongnam", "수원":"Suwon", "수원시":"Suwon", "고양":"Goyang", "고양시":"Goyang", "용인":"Yongin", "용인시":"Yongin", "창원":"Changwon", "제주":"Jeju", "제주시":"Jeju", "강릉":"Gangneung", "경주":"Gyeongju", "전주":"Jeonju", "춘천":"Chuncheon", "속초":"Sokcho",
- "도쿄":"Tokyo", "동경":"Tokyo", "오사카":"Osaka", "교토":"Kyoto", "삿포로":"Sapporo", "하코다테":"Hakodate", "후라노":"Furano", "비에이":"Biei", "아사히카와":"Asahikawa", "후쿠오카":"Fukuoka", "나고야":"Nagoya", "요코하마":"Yokohama", "고베":"Kobe", "나라":"Nara", "오키나와":"Okinawa", "나하":"Naha",
+ "도쿄":"Tokyo", "동경":"Tokyo", "오사카":"Osaka", "교토":"Kyoto", "삿포로":"Sapporo", "하코다테":"Hakodate", "후라노":"Furano", "비에이":"Biei", "아사히카와":"Asahikawa", "후쿠오카":"Fukuoka", "나고야":"Nagoya", "사가":"Saga", "사가시":"Saga", "사가현":"Saga", "구마모토":"Kumamoto", "오이타":"Oita", "나가사키":"Nagasaki", "미야자키":"Miyazaki", "가고시마":"Kagoshima", "벳푸":"Beppu", "유후인":"Yufuin", "요코하마":"Yokohama", "고베":"Kobe", "나라":"Nara", "오키나와":"Okinawa", "나하":"Naha",
  "뉴욕":"New York", "로스앤젤레스":"Los Angeles", "엘에이":"Los Angeles", "샌프란시스코":"San Francisco", "시카고":"Chicago", "라스베이거스":"Las Vegas", "하와이":"Honolulu", "호놀룰루":"Honolulu", "밴쿠버":"Vancouver", "토론토":"Toronto",
  "런던":"London", "파리":"Paris", "로마":"Rome", "밀라노":"Milan", "베네치아":"Venice", "베니스":"Venice", "피렌체":"Florence", "바르셀로나":"Barcelona", "마드리드":"Madrid", "리스본":"Lisbon", "베를린":"Berlin", "뮌헨":"Munich", "프랑크푸르트":"Frankfurt", "프라하":"Prague", "빈":"Vienna", "비엔나":"Vienna", "부다페스트":"Budapest", "암스테르담":"Amsterdam", "브뤼셀":"Brussels", "취리히":"Zurich", "제네바":"Geneva", "인터라켄":"Interlaken", "이스탄불":"Istanbul", "아테네":"Athens",
  "두바이":"Dubai", "아부다비":"Abu Dhabi", "싱가포르":"Singapore", "방콕":"Bangkok", "치앙마이":"Chiang Mai", "푸켓":"Phuket", "다낭":"Da Nang", "하노이":"Hanoi", "호치민":"Ho Chi Minh City", "호찌민":"Ho Chi Minh City", "타이베이":"Taipei", "대만":"Taipei", "홍콩":"Hong Kong", "마카오":"Macau", "상하이":"Shanghai", "베이징":"Beijing", "광저우":"Guangzhou", "시드니":"Sydney", "멜버른":"Melbourne", "오클랜드":"Auckland"
@@ -191,7 +191,10 @@ function isCityCandidate(x,q){
  const code=String(x.feature_code||'');
  if(!x.country_code || !x.name || !x.admin1_id && !x.admin1 && !['PPLC','PPLA'].includes(code)) return false;
  if(isSeongnamQuery(q)) return x.country_code==='KR' && Math.abs(x.latitude-37.44)<0.18 && Math.abs(x.longitude-127.14)<0.18 && /성남|seongnam/i.test(x.name) && (/^PPLA[2-5]?$/.test(code)||code==='PPL' && Number(x.population)>100000);
- return /^(PPLC|PPLA[2-5]?|PPLG)$/.test(code) || code==='PPL' && Number(x.population)>0;
+ if (/^(PPLC|PPLA[2-5]?|PPLG)$/.test(code)) return true;
+ if(code!=='PPL') return false;
+ const n=normalizePlace(x.name), k=normalizePlace(q), a=normalizePlace(cityAliases[q]);
+ return Number(x.population)>0 || [k,a].filter(Boolean).some(v=>n===v||n===v+'시'||n===v+'si'||n===v+'町'||n===v+'정');
 }
 function cityPriority(x,q){
  const n=normalizePlace(x.name), k=normalizePlace(q), alias=normalizePlace(cityAliases[q]);
@@ -213,10 +216,10 @@ async function searchWorldCities(rawQuery){
   const koSettled=await Promise.allSettled(queries.map(name=>request(name,'ko')));
   let responses=koSettled.filter(x=>x.status==='fulfilled').map(x=>x.value);
   let results=responses.flat();
-  if(!results.length){
+  if(!results.some(x=>x && isCityCandidate(x,rawQuery))){
     const enSettled=await Promise.allSettled(queries.map(name=>request(name,'en')));
     responses=enSettled.filter(x=>x.status==='fulfilled').map(x=>x.value);
-    results=responses.flat();
+    results=results.concat(responses.flat());
   }
   if(!koSettled.some(x=>x.status==='fulfilled') && !results.length){
     throw new Error('도시 검색 서버에 연결하지 못했습니다. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.');
@@ -253,7 +256,7 @@ const koreanCityNames={
   Yongin:'용인시', Changwon:'창원시', Jeju:'제주시',
   Gangneung:'강릉시', Gyeongju:'경주시', Jeonju:'전주시',
   Chuncheon:'춘천시', Sokcho:'속초시',
-  Tokyo:'도쿄', Osaka:'오사카', Kyoto:'교토', Sapporo:'삿포로',
+  Saga:'사가시', 'Saga-shi':'사가시', Tokyo:'도쿄', Osaka:'오사카', Kyoto:'교토', Sapporo:'삿포로',
   Hakodate:'하코다테', Fukuoka:'후쿠오카', Nagoya:'나고야',
   Yokohama:'요코하마', Kobe:'고베', Nara:'나라', Naha:'나하',
   'New York':'뉴욕', 'Los Angeles':'로스앤젤레스',
@@ -288,6 +291,7 @@ function localizedCityName(x){
     const found=koreanCityNames[raw] || koreanCityNames[raw.replace(/-si$/i,'')];
     if(found) return found;
   }
+  if(x.country_code==='JP' && /^(Saga|Saga-shi)$/i.test(raw)) return '사가시';
   return raw;
 }
 function localizedAdmin1(x){
@@ -299,6 +303,7 @@ function localizedAdmin1(x){
     const corrected={'전라북도':'전북특별자치도','강원도':'강원특별자치도','제주도':'제주특별자치도'}[raw] || raw;
     return Object.values(koreanAdmin1.KR).includes(corrected)?corrected:'';
   }
+  if(x.country_code==='JP' && /^(Saga|Saga-ken|Saga Prefecture)$/i.test(raw)) return '사가현';
   return raw.replace(/([가-힣]) (현|부|도)$/,'$1$2');
 }
 function localizedCountry(x){
