@@ -184,6 +184,20 @@ function cityQueryVariants(q){
  // 한글 지명은 별칭 검색이 실패해도 원문을 영어 응답 언어로 한 번 조회합니다.
  return [...new Set(variants)].filter(v=>v.length>=2);
 }
+// Prefer administrative seats; retain populated towns with recorded population.
+function normalizePlace(v){return String(v||'').toLowerCase().normalize('NFKC').replace(/[\s.,-]/g,'');}
+function isSeongnamQuery(q){return /^(성남시?|seongnam(?:-?si)?)$/i.test(q.trim());}
+function isCityCandidate(x,q){
+ const code=String(x.feature_code||'');
+ if(!x.country_code || !x.name || !x.admin1_id && !x.admin1 && !['PPLC','PPLA'].includes(code)) return false;
+ if(isSeongnamQuery(q)) return x.country_code==='KR' && Math.abs(x.latitude-37.44)<0.18 && Math.abs(x.longitude-127.14)<0.18 && /성남|seongnam/i.test(x.name) && (/^PPLA[2-5]?$/.test(code)||code==='PPL' && Number(x.population)>100000);
+ return /^(PPLC|PPLA[2-5]?|PPLG)$/.test(code) || code==='PPL' && Number(x.population)>0;
+}
+function cityPriority(x,q){
+ const n=normalizePlace(x.name), k=normalizePlace(q), alias=normalizePlace(cityAliases[q]);
+ const exact=[k,alias].filter(Boolean).some(v=>n===v||n===v+'시'||n===v+'si');
+ return (exact?100000000:0)+(/^PPLA|^PPLC/.test(x.feature_code)?10000000:0)+Math.min(Number(x.population)||0,9999999);
+}
 async function searchWorldCities(rawQuery){
   const queries=cityQueryVariants(rawQuery);
   // 한국어 번역을 우선 요청합니다. Open-Meteo는 번역이 없으면 영문 또는 현지 명칭을 반환합니다.
@@ -210,12 +224,12 @@ async function searchWorldCities(rawQuery){
   const seen=new Set(), filtered=[];
   for(const x of results){
     if(!x || !Number.isFinite(x.latitude) || !Number.isFinite(x.longitude)) continue;
-    if(!x.feature_code || !String(x.feature_code).startsWith('PPL')) continue;
+    if(!isCityCandidate(x,rawQuery)) continue;
     const key=String(x.id ?? `${x.name}|${x.country_code}|${x.latitude}|${x.longitude}`);
     if(seen.has(key)) continue;
     seen.add(key); filtered.push(x);
   }
-  return filtered.slice(0,100);
+  return filtered.sort((a,b)=>cityPriority(b,rawQuery)-cityPriority(a,rawQuery)).slice(0,100);
 }
 
 // Open-Meteo/GeoNames의 국가 코드와 한국 주요 도시 표기를 보정합니다.
@@ -282,14 +296,16 @@ function localizedAdmin1(x){
   if(x.country_code==='KR'){
     const found=koreanAdmin1.KR[raw];
     if(found) return found;
+    const corrected={'전라북도':'전북특별자치도','강원도':'강원특별자치도','제주도':'제주특별자치도'}[raw] || raw;
+    return Object.values(koreanAdmin1.KR).includes(corrected)?corrected:'';
   }
-  return raw;
+  return raw.replace(/([가-힣]) (현|부|도)$/,'$1$2');
 }
 function localizedCountry(x){
   return countryKo[x.country_code] || x.country || '';
 }
 function cityLabel(x){
-  const city=localizedCityName(x), admin=localizedAdmin1(x), country=localizedCountry(x);
+  const city=isSeongnamQuery(x.name)&&x.country_code==='KR'&&Math.abs(x.latitude-37.44)<0.18&&Math.abs(x.longitude-127.14)<0.18?'성남시':localizedCityName(x).replace(/([가-힣]) 시$/,'$1시'), admin=city==='성남시'&&x.country_code==='KR'?'경기도':localizedAdmin1(x), country=localizedCountry(x);
   const parts=[];
   if(city) parts.push(city);
   // 동일한 도시/광역시가 admin1에도 반복되는 경우 중복 표기하지 않습니다.
@@ -311,8 +327,8 @@ async function searchBaseCity(){
  box.textContent='전 세계 도시 데이터에서 검색하고 있습니다…';$('baseCitySearchBtn').disabled=true;
  try{
   const results=await searchWorldCities(q);
-  if(!results.length){box.textContent='일치하는 도시·마을을 찾지 못했습니다. 예: 성남 또는 Seongnam, Tokyo 또는 Tokyo, Japan처럼 입력해 주세요.';return}
-  box.innerHTML=`<strong>${results.length}개 도시·정착지 검색 결과</strong>`;
+  if(!results.length){box.textContent='조건에 맞는 도시를 찾지 못했습니다. 예: 성남 또는 Seongnam, Tokyo 또는 Tokyo, Japan처럼 입력해 주세요.';return}
+  box.innerHTML=`<strong>${results.length}개 도시 검색 결과</strong>`;
   results.forEach(x=>appendCityResult(box,x,'출발 도시로 선택 · ',(place,name)=>{
    selectedBase={id:'base',name,lat:place.latitude,lon:place.longitude,flag:'📍'};
    $('baseCitySearch').value=name;
@@ -332,8 +348,8 @@ function setupDestinationSearch(slot){
   box.textContent='전 세계 도시 데이터에서 검색하고 있습니다…';button.disabled=true;
   try{
    const results=await searchWorldCities(q);
-   if(!results.length){box.textContent='일치하는 도시·마을을 찾지 못했습니다. 도시명 또는 도시명 + 국가명으로 입력해 주세요.';return}
-   box.innerHTML=`<strong>${results.length}개 도시·정착지 검색 결과</strong>`;
+   if(!results.length){box.textContent='조건에 맞는 도시를 찾지 못했습니다. 도시명 또는 도시명 + 국가명으로 입력해 주세요.';return}
+   box.innerHTML=`<strong>${results.length}개 도시 검색 결과</strong>`;
    results.forEach((x,i)=>appendCityResult(box,x,'＋ 이 칸에 선택 · ',(place,name)=>{
     const item={id:'search'+Date.now()+slot+i,name,lat:place.latitude,lon:place.longitude,flag:'📍'};
     const chosen=[$('city1').value,$('city2').value,$('city3').value].filter((id,index)=>Boolean(id)&&index!==slot-1);
